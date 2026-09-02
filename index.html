@@ -9,10 +9,11 @@
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid #45475a; padding-bottom: 10px;}
         .status { color: #a6e3a1; font-weight: bold; font-size: 0.9em; }
         .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; }
-        .card { background: #181825; padding: 15px; border-radius: 8px; border: 1px solid #313244; }
-        .title { color: #89b4fa; font-size: 1.2em; font-weight: bold; margin-bottom: 10px; border-bottom: 1px solid #313244; padding-bottom: 5px; }
+        .card { background: #181825; padding: 15px; border-radius: 8px; border: 1px solid #313244; align-self: start; }
         
-        /* 3-Column Grid for Perfect Alignment */
+        .title { color: #89b4fa; font-size: 1.2em; font-weight: bold; margin-bottom: 10px; border-bottom: 1px solid #313244; padding-bottom: 5px; }
+        .sub-title { color: #cba6f7; font-size: 1.1em; font-weight: bold; margin: 20px 0 10px 0; border-bottom: 1px dashed #45475a; padding-bottom: 5px; }
+        
         .item { 
             display: grid; 
             grid-template-columns: 1fr 45px 85px; 
@@ -46,16 +47,29 @@
     </div>
 
     <script>
-        // Accurately sorted categories based on the server plugin tracking
-        const categories = {
-            "Ores": ["Amethyst Shard", "Coal", "Copper Ingot", "Diamond", "Emerald", "Gold Ingot", "Iron Ingot", "Lapis Lazuli", "Netherite Ingot", "Quartz", "Redstone", "Raw Copper", "Raw Gold", "Raw Iron", "Resin Brick", "Glowstone Dust", "Prismarine Crystals"],
-            "Veg Food": ["Apple", "Baked Potato", "Beetroot", "Beetroot Soup", "Bread", "Cake", "Carrot", "Chorus Fruit", "Cookie", "Dried Kelp", "Enchanted Golden Apple", "Glow Berries", "Golden Apple", "Golden Carrot", "Honey Bottle", "Melon Slice", "Mushroom Stew", "Poisonous Potato", "Potato", "Pumpkin Pie", "Suspicious Stew", "Sweet Berries"],
-            "Non-Veg Food": ["Beef", "Chicken", "Cod", "Cooked Chicken", "Cooked Cod", "Cooked Mutton", "Cooked Porkchop", "Cooked Rabbit", "Cooked Salmon", "Mutton", "Porkchop", "Pufferfish", "Rabbit", "Rabbit Stew", "Salmon", "Steak", "Tropical Fish"],
-            "Hostile Drops": ["Arrow", "Blaze Rod", "Bone", "Breeze Rod", "Ender Pearl", "Ghast Tear", "Gunpowder", "Magma Cream", "Ominous Bottle", "Phantom Membrane", "Rotten Flesh", "Shulker Shell", "Slime Ball", "Spider Eye", "Wither Skeleton Skull", "Zombie Head"],
-            "Passive Drops": ["Armadillo Scute", "Egg", "Feather", "Glow Ink Sac", "Goat Horn", "Ink Sac", "Leather", "Rabbit Foot", "Rabbit Hide", "Turtle Scute", "Wool"],
-            "Agriculture": ["Bone Meal", "Pitcher Pod", "Seagrass", "Sugar", "Torchflower Seeds"],
-            "Misc": ["Glass Bottle", "Lead", "Milk Bucket", "Nautilus Shell", "Nether Star", "Prismarine Shard", "Saddle", "Sculk Catalyst", "Snowball", "Stick", "String", "Totem Of Undying", "Trident", "Wet Sponge"]
-        };
+        // Data structure changed to group multiple sections into single cards
+        const layout = [
+            [
+                { title: "Ores", items: ["Amethyst Shard", "Coal", "Copper Ingot", "Diamond", "Emerald", "Gold Ingot", "Iron Ingot", "Lapis Lazuli", "Redstone", "Raw Copper", "Raw Gold", "Raw Iron", "Resin Brick", "Prismarine Crystals"] },
+                { title: "Nether", items: ["Netherite Ingot", "Quartz", "Glowstone Dust"] }
+            ],
+            [
+                { title: "Veg Food", items: ["Apple", "Baked Potato", "Beetroot", "Beetroot Soup", "Bread", "Cake", "Carrot", "Chorus Fruit", "Cookie", "Dried Kelp", "Enchanted Golden Apple", "Glow Berries", "Golden Apple", "Golden Carrot", "Honey Bottle", "Melon Slice", "Mushroom Stew", "Poisonous Potato", "Potato", "Pumpkin Pie", "Suspicious Stew", "Sweet Berries"] }
+            ],
+            [
+                { title: "Non-Veg Food", items: ["Beef", "Chicken", "Cod", "Cooked Chicken", "Cooked Cod", "Cooked Mutton", "Cooked Porkchop", "Cooked Rabbit", "Cooked Salmon", "Mutton", "Porkchop", "Pufferfish", "Rabbit", "Rabbit Stew", "Salmon", "Steak", "Tropical Fish"] },
+                { title: "Agriculture", items: ["Bone Meal", "Pitcher Pod", "Seagrass", "Sugar", "Torchflower Seeds"] }
+            ],
+            [
+                { title: "Hostile Drops", items: ["Arrow", "Blaze Rod", "Bone", "Breeze Rod", "Ender Pearl", "Ghast Tear", "Gunpowder", "Magma Cream", "Ominous Bottle", "Phantom Membrane", "Rotten Flesh", "Shulker Shell", "Slime Ball", "Spider Eye", "Wither Skeleton Skull", "Zombie Head"] }
+            ],
+            [
+                { title: "Passive Drops", items: ["Armadillo Scute", "Egg", "Feather", "Glow Ink Sac", "Goat Horn", "Ink Sac", "Leather", "Rabbit Foot", "Rabbit Hide", "Turtle Scute", "Wool"] }
+            ],
+            [
+                { title: "Misc", items: ["Glass Bottle", "Lead", "Milk Bucket", "Nautilus Shell", "Nether Star", "Prismarine Shard", "Saddle", "Sculk Catalyst", "Snowball", "Stick", "String", "Totem Of Undying", "Trident", "Wet Sponge"] }
+            ]
+        ];
 
         window.addEventListener('updateDashboard', (e) => {
             parseAndRender(e.detail);
@@ -75,36 +89,48 @@
 
             let html = '';
             
-            for (const [catName, items] of Object.entries(categories)) {
-                let catHtml = `<div class="card"><div class="title">${catName}</div>`;
-                let sortedItems = [];
+            layout.forEach(cardGroup => {
+                let catHtml = `<div class="card">`;
+                
+                cardGroup.forEach((section, index) => {
+                    // Use a main title for the top of the card, and a sub-title for nested categories
+                    if (index === 0) {
+                        catHtml += `<div class="title">${section.title}</div>`;
+                    } else {
+                        catHtml += `<div class="sub-title">${section.title}</div>`;
+                    }
 
-                items.forEach(item => {
-                    if (data[item] !== undefined) {
-                        let count = data[item];
-                        let yieldVal = count === 0 ? 1.00 : (1 / Math.sqrt(count)); 
-                        sortedItems.push({ name: item, count, yield: yieldVal });
-                        trackedItems.add(item);
+                    let sortedItems = [];
+                    section.items.forEach(item => {
+                        if (data[item] !== undefined) {
+                            let count = data[item];
+                            let yieldVal = count === 0 ? 1.00 : (1 / Math.sqrt(count)); 
+                            sortedItems.push({ name: item, count, yield: yieldVal });
+                            trackedItems.add(item);
+                        }
+                    });
+
+                    sortedItems.sort((a, b) => b.yield - a.yield);
+
+                    if(sortedItems.length === 0) {
+                        catHtml += `<div style="color: #6c7086; font-size: 0.9em; padding: 5px 0;">No items tracked yet.</div>`;
+                    } else {
+                        sortedItems.forEach(i => {
+                            let colorClass = i.yield >= 0.5 ? 'val-high' : (i.yield >= 0.15 ? 'val-med' : 'val-low');
+                            catHtml += `<div class="item">
+                                <span class="item-name">${i.name}</span>
+                                <span class="item-count">(${i.count})</span>
+                                <span class="item-yield ${colorClass}">+${i.yield.toFixed(2)} pts</span>
+                            </div>`;
+                        });
                     }
                 });
+                
+                catHtml += `</div>`;
+                html += catHtml;
+            });
 
-                sortedItems.sort((a, b) => b.yield - a.yield);
-
-                if(sortedItems.length === 0) {
-                    catHtml += `<div style="color: #6c7086; font-size: 0.9em;">No items tracked yet.</div>`;
-                } else {
-                    sortedItems.forEach(i => {
-                        let colorClass = i.yield >= 0.5 ? 'val-high' : (i.yield >= 0.15 ? 'val-med' : 'val-low');
-                        catHtml += `<div class="item">
-                            <span class="item-name">${i.name}</span>
-                            <span class="item-count">(${i.count})</span>
-                            <span class="item-yield ${colorClass}">+${i.yield.toFixed(2)} pts</span>
-                        </div>`;
-                    });
-                }
-                html += catHtml + `</div>`;
-            }
-
+            // Catch any remaining items not hardcoded into the layout arrays
             let othersItems = [];
             for (const [item, count] of Object.entries(data)) {
                 if (!trackedItems.has(item)) {
