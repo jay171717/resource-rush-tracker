@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ResourceRush Live Tracker</title>
+    <style>
+        body { background: #1e1e2e; color: #cdd6f4; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 20px; max-width: 1200px; margin: 0 auto;}
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid #45475a; padding-bottom: 10px;}
+        .status { color: #a6e3a1; font-weight: bold; font-size: 0.9em; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; }
+        .card { background: #181825; padding: 15px; border-radius: 8px; border: 1px solid #313244; }
+        .title { color: #89b4fa; font-size: 1.2em; font-weight: bold; margin-bottom: 10px; border-bottom: 1px solid #313244; padding-bottom: 5px; }
+        .item { display: flex; justify-content: space-between; margin: 5px 0; padding: 4px 0; border-bottom: 1px dashed #313244;}
+        .val-high { color: #a6e3a1; font-weight: bold; } 
+        .val-med { color: #f9e2af; } 
+        .val-low { color: #f38ba8; }
+        .empty-state { text-align: center; color: #6c7086; margin-top: 50px; font-size: 1.1em; grid-column: 1 / -1; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h2 style="margin: 0;">ResourceRush Live Tracker</h2>
+        <div class="status" id="statusText">Waiting for Discord data...</div>
+    </div>
+    
+    <div id="output" class="grid">
+        <div class="empty-state">
+            Keep the Discord channel open in another tab. The data will sync automatically!
+        </div>
+    </div>
+
+    <script>
+        const categories = {
+            "Ores": ["Amethyst Shard", "Coal", "Copper Ingot", "Diamond", "Emerald", "Gold Ingot", "Iron Ingot", "Lapis Lazuli", "Quartz", "Redstone", "Raw Copper", "Raw Gold", "Raw Iron", "Resin Brick"],
+            "Food": ["Baked Potato", "Beetroot Soup", "Bread", "Cake", "Cooked Chicken", "Cooked Cod", "Cooked Mutton", "Cooked Porkchop", "Cooked Rabbit", "Cooked Salmon", "Cookie", "Dried Kelp", "Enchanted Golden Apple", "Golden Apple", "Golden Carrot", "Honey Bottle", "Mushroom Stew", "Pumpkin Pie", "Rabbit Stew", "Steak", "Suspicious Stew"],
+            "Agriculture": ["Apple", "Beetroot", "Carrot", "Chorus Fruit", "Glow Berries", "Melon Slice", "Poisonous Potato", "Potato", "Sweet Berries", "Pitcher Pod", "Torchflower Seeds", "Bone Meal", "Sugar", "Seagrass"],
+            "Hostile Drops": ["Arrow", "Bone", "Breeze Rod", "Ender Pearl", "Gunpowder", "Phantom Membrane", "Rotten Flesh", "Shulker Shell", "Slime Ball", "Spider Eye", "Zombie Head"],
+            "Passive Drops": ["Armadillo Scute", "Beef", "Chicken", "Cod", "Egg", "Feather", "Glow Ink Sac", "Goat Horn", "Ink Sac", "Leather", "Milk Bucket", "Mutton", "Porkchop", "Pufferfish", "Rabbit", "Rabbit Foot", "Rabbit Hide", "Salmon", "Tropical Fish", "Turtle Scute", "Wool"],
+            "Nether": ["Netherite Ingot", "Blaze Rod", "Ghast Tear", "Magma Cream", "Nether Star", "Wither Skeleton Skull", "Glowstone Dust"],
+            "Misc": ["Glass Bottle", "Lead", "Nautilus Shell", "Ominous Bottle", "Prismarine Crystals", "Prismarine Shard", "Saddle", "Sculk Catalyst", "Snowball", "Stick", "String", "Totem Of Undying", "Trident", "Wet Sponge"]
+        };
+
+        window.addEventListener('updateDashboard', (e) => {
+            parseAndRender(e.detail);
+            document.getElementById('statusText').innerText = `Last synced: ${new Date().toLocaleTimeString()}`;
+        });
+
+        function parseAndRender(rawText) {
+            const lines = rawText.split('\n');
+            const data = {};
+            const trackedItems = new Set();
+            
+            lines.forEach(line => {
+                if(!line.includes(':')) return;
+                let [item, count] = line.split(':').map(s => s.trim());
+                data[item] = parseInt(count) || 0;
+            });
+
+            let html = '';
+            
+            for (const [catName, items] of Object.entries(categories)) {
+                let catHtml = `<div class="card"><div class="title">${catName}</div>`;
+                let sortedItems = [];
+
+                items.forEach(item => {
+                    if (data[item] !== undefined) {
+                        let count = data[item];
+                        let yieldVal = count === 0 ? 1.00 : (1 / Math.sqrt(count)); 
+                        sortedItems.push({ name: item, count, yield: yieldVal });
+                        trackedItems.add(item);
+                    }
+                });
+
+                sortedItems.sort((a, b) => b.yield - a.yield);
+
+                if(sortedItems.length === 0) {
+                    catHtml += `<div style="color: #6c7086; font-size: 0.9em;">No items tracked yet.</div>`;
+                } else {
+                    sortedItems.forEach(i => {
+                        let colorClass = i.yield >= 0.5 ? 'val-high' : (i.yield >= 0.15 ? 'val-med' : 'val-low');
+                        catHtml += `<div class="item">
+                            <span>${i.name} <span style="color:#6c7086;font-size:0.9em;">(${i.count})</span></span>
+                            <span class="${colorClass}">+${i.yield.toFixed(2)} pts</span>
+                        </div>`;
+                    });
+                }
+                html += catHtml + `</div>`;
+            }
+
+            let othersItems = [];
+            for (const [item, count] of Object.entries(data)) {
+                if (!trackedItems.has(item)) {
+                    let yieldVal = count === 0 ? 1.00 : (1 / Math.sqrt(count));
+                    othersItems.push({ name: item, count, yield: yieldVal });
+                }
+            }
+
+            if (othersItems.length > 0) {
+                othersItems.sort((a, b) => b.yield - a.yield);
+                let othersHtml = `<div class="card" style="border-color: #cba6f7;"><div class="title" style="color: #cba6f7;">Others</div>`;
+                othersItems.forEach(i => {
+                    let colorClass = i.yield >= 0.5 ? 'val-high' : (i.yield >= 0.15 ? 'val-med' : 'val-low');
+                    othersHtml += `<div class="item">
+                        <span>${i.name} <span style="color:#6c7086;font-size:0.9em;">(${i.count})</span></span>
+                        <span class="${colorClass}">+${i.yield.toFixed(2)} pts</span>
+                    </div>`;
+                });
+                html += othersHtml + `</div>`;
+            }
+
+            document.getElementById('output').innerHTML = html;
+        }
+    </script>
+</body>
+</html>
