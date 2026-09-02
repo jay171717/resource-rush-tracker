@@ -9,10 +9,14 @@
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid #45475a; padding-bottom: 10px;}
         .status { color: #a6e3a1; font-weight: bold; font-size: 0.9em; }
         .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; }
-        .card { background: #181825; padding: 15px; border-radius: 8px; border: 1px solid #313244; align-self: start; }
+        
+        /* Removed 'align-self: start' so all cards automatically stretch to the tallest column's bottom line */
+        .card { background: #181825; padding: 15px; border-radius: 8px; border: 1px solid #313244; display: flex; flex-direction: column; }
         
         .title { color: #89b4fa; font-size: 1.2em; font-weight: bold; margin-bottom: 10px; border-bottom: 1px solid #313244; padding-bottom: 5px; }
-        .sub-title { color: #cba6f7; font-size: 1.1em; font-weight: bold; margin: 20px 0 10px 0; border-bottom: 1px dashed #45475a; padding-bottom: 5px; }
+        
+        /* Increased top margin to 40px to create significant space before secondary groups like Nether/Agriculture */
+        .sub-title { color: #cba6f7; font-size: 1.1em; font-weight: bold; margin: 40px 0 10px 0; border-bottom: 1px dashed #45475a; padding-bottom: 5px; }
         
         .item { 
             display: grid; 
@@ -32,11 +36,12 @@
         .val-med { color: #f9e2af; } 
         .val-low { color: #f38ba8; }
         .empty-state { text-align: center; color: #6c7086; margin-top: 50px; font-size: 1.1em; grid-column: 1 / -1; }
+        .count-badge { color: #6c7086; font-size: 0.8em; font-weight: normal; margin-left: 5px; }
     </style>
 </head>
 <body>
     <div class="header">
-        <h2 style="margin: 0;">ResourceRush Live Tracker</h2>
+        <h2 style="margin: 0;">ResourceRush Live Tracker <span id="totalHeaderCount" style="color: #89b4fa; font-size: 0.7em; margin-left: 10px;"></span></h2>
         <div class="status" id="statusText">Waiting for Discord data...</div>
     </div>
     
@@ -47,7 +52,6 @@
     </div>
 
     <script>
-        // Data structure changed to group multiple sections into single cards
         const layout = [
             [
                 { title: "Ores", items: ["Amethyst Shard", "Coal", "Copper Ingot", "Diamond", "Emerald", "Gold Ingot", "Iron Ingot", "Lapis Lazuli", "Redstone", "Raw Copper", "Raw Gold", "Raw Iron", "Resin Brick", "Prismarine Crystals"] },
@@ -87,19 +91,16 @@
                 data[item] = parseInt(count) || 0;
             });
 
+            // Update Total Header Count
+            const totalItemsFound = Object.keys(data).length;
+            document.getElementById('totalHeaderCount').innerText = `(${totalItemsFound} Total Items)`;
+
             let html = '';
             
             layout.forEach(cardGroup => {
                 let catHtml = `<div class="card">`;
                 
                 cardGroup.forEach((section, index) => {
-                    // Use a main title for the top of the card, and a sub-title for nested categories
-                    if (index === 0) {
-                        catHtml += `<div class="title">${section.title}</div>`;
-                    } else {
-                        catHtml += `<div class="sub-title">${section.title}</div>`;
-                    }
-
                     let sortedItems = [];
                     section.items.forEach(item => {
                         if (data[item] !== undefined) {
@@ -111,6 +112,13 @@
                     });
 
                     sortedItems.sort((a, b) => b.yield - a.yield);
+
+                    // Add the count badge dynamically to the title
+                    if (index === 0) {
+                        catHtml += `<div class="title">${section.title} <span class="count-badge">(${sortedItems.length})</span></div>`;
+                    } else {
+                        catHtml += `<div class="sub-title">${section.title} <span class="count-badge">(${sortedItems.length})</span></div>`;
+                    }
 
                     if(sortedItems.length === 0) {
                         catHtml += `<div style="color: #6c7086; font-size: 0.9em; padding: 5px 0;">No items tracked yet.</div>`;
@@ -130,7 +138,6 @@
                 html += catHtml;
             });
 
-            // Catch any remaining items not hardcoded into the layout arrays
             let othersItems = [];
             for (const [item, count] of Object.entries(data)) {
                 if (!trackedItems.has(item)) {
@@ -141,7 +148,8 @@
 
             if (othersItems.length > 0) {
                 othersItems.sort((a, b) => b.yield - a.yield);
-                let othersHtml = `<div class="card" style="border-color: #cba6f7;"><div class="title" style="color: #cba6f7;">Others</div>`;
+                let othersHtml = `<div class="card" style="border-color: #cba6f7;">
+                    <div class="title" style="color: #cba6f7;">Others <span class="count-badge">(${othersItems.length})</span></div>`;
                 othersItems.forEach(i => {
                     let colorClass = i.yield >= 0.5 ? 'val-high' : (i.yield >= 0.15 ? 'val-med' : 'val-low');
                     othersHtml += `<div class="item">
