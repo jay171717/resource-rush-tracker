@@ -5,13 +5,28 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ResourceRush Live Tracker</title>
     <style>
-        body { background: #1e1e2e; color: #cdd6f4; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 20px; max-width: 1200px; margin: 0 auto;}
+        body { background: #1e1e2e; color: #cdd6f4; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 20px; max-width: 1300px; margin: 0 auto;}
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid #45475a; padding-bottom: 10px;}
         .status { color: #a6e3a1; font-weight: bold; font-size: 0.9em; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; }
         .card { background: #181825; padding: 15px; border-radius: 8px; border: 1px solid #313244; }
         .title { color: #89b4fa; font-size: 1.2em; font-weight: bold; margin-bottom: 10px; border-bottom: 1px solid #313244; padding-bottom: 5px; }
-        .item { display: flex; justify-content: space-between; margin: 5px 0; padding: 4px 0; border-bottom: 1px dashed #313244;}
+        
+        /* 3-Column Grid for Perfect Alignment */
+        .item { 
+            display: grid; 
+            grid-template-columns: 1fr 45px 85px; 
+            gap: 10px; 
+            align-items: center; 
+            margin: 5px 0; 
+            padding: 4px 0; 
+            border-bottom: 1px dashed #313244;
+        }
+        
+        .item-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .item-count { color: #6c7086; font-size: 0.85em; text-align: right; }
+        .item-yield { text-align: right; }
+        
         .val-high { color: #a6e3a1; font-weight: bold; } 
         .val-med { color: #f9e2af; } 
         .val-low { color: #f38ba8; }
@@ -31,14 +46,15 @@
     </div>
 
     <script>
+        // Accurately sorted categories based on the server plugin tracking
         const categories = {
-            "Ores": ["Amethyst Shard", "Coal", "Copper Ingot", "Diamond", "Emerald", "Gold Ingot", "Iron Ingot", "Lapis Lazuli", "Quartz", "Redstone", "Raw Copper", "Raw Gold", "Raw Iron", "Resin Brick"],
-            "Food": ["Baked Potato", "Beetroot Soup", "Bread", "Cake", "Cooked Chicken", "Cooked Cod", "Cooked Mutton", "Cooked Porkchop", "Cooked Rabbit", "Cooked Salmon", "Cookie", "Dried Kelp", "Enchanted Golden Apple", "Golden Apple", "Golden Carrot", "Honey Bottle", "Mushroom Stew", "Pumpkin Pie", "Rabbit Stew", "Steak", "Suspicious Stew"],
-            "Agriculture": ["Apple", "Beetroot", "Carrot", "Chorus Fruit", "Glow Berries", "Melon Slice", "Poisonous Potato", "Potato", "Sweet Berries", "Pitcher Pod", "Torchflower Seeds", "Bone Meal", "Sugar", "Seagrass"],
-            "Hostile Drops": ["Arrow", "Bone", "Breeze Rod", "Ender Pearl", "Gunpowder", "Phantom Membrane", "Rotten Flesh", "Shulker Shell", "Slime Ball", "Spider Eye", "Zombie Head"],
-            "Passive Drops": ["Armadillo Scute", "Beef", "Chicken", "Cod", "Egg", "Feather", "Glow Ink Sac", "Goat Horn", "Ink Sac", "Leather", "Milk Bucket", "Mutton", "Porkchop", "Pufferfish", "Rabbit", "Rabbit Foot", "Rabbit Hide", "Salmon", "Tropical Fish", "Turtle Scute", "Wool"],
-            "Nether": ["Netherite Ingot", "Blaze Rod", "Ghast Tear", "Magma Cream", "Nether Star", "Wither Skeleton Skull", "Glowstone Dust"],
-            "Misc": ["Glass Bottle", "Lead", "Nautilus Shell", "Ominous Bottle", "Prismarine Crystals", "Prismarine Shard", "Saddle", "Sculk Catalyst", "Snowball", "Stick", "String", "Totem Of Undying", "Trident", "Wet Sponge"]
+            "Ores": ["Amethyst Shard", "Coal", "Copper Ingot", "Diamond", "Emerald", "Gold Ingot", "Iron Ingot", "Lapis Lazuli", "Netherite Ingot", "Quartz", "Redstone", "Raw Copper", "Raw Gold", "Raw Iron", "Resin Brick", "Glowstone Dust", "Prismarine Crystals"],
+            "Veg Food": ["Apple", "Baked Potato", "Beetroot", "Beetroot Soup", "Bread", "Cake", "Carrot", "Chorus Fruit", "Cookie", "Dried Kelp", "Enchanted Golden Apple", "Glow Berries", "Golden Apple", "Golden Carrot", "Honey Bottle", "Melon Slice", "Mushroom Stew", "Poisonous Potato", "Potato", "Pumpkin Pie", "Suspicious Stew", "Sweet Berries"],
+            "Non-Veg Food": ["Beef", "Chicken", "Cod", "Cooked Chicken", "Cooked Cod", "Cooked Mutton", "Cooked Porkchop", "Cooked Rabbit", "Cooked Salmon", "Mutton", "Porkchop", "Pufferfish", "Rabbit", "Rabbit Stew", "Salmon", "Steak", "Tropical Fish"],
+            "Hostile Drops": ["Arrow", "Blaze Rod", "Bone", "Breeze Rod", "Ender Pearl", "Ghast Tear", "Gunpowder", "Magma Cream", "Ominous Bottle", "Phantom Membrane", "Rotten Flesh", "Shulker Shell", "Slime Ball", "Spider Eye", "Wither Skeleton Skull", "Zombie Head"],
+            "Passive Drops": ["Armadillo Scute", "Egg", "Feather", "Glow Ink Sac", "Goat Horn", "Ink Sac", "Leather", "Rabbit Foot", "Rabbit Hide", "Turtle Scute", "Wool"],
+            "Agriculture": ["Bone Meal", "Pitcher Pod", "Seagrass", "Sugar", "Torchflower Seeds"],
+            "Misc": ["Glass Bottle", "Lead", "Milk Bucket", "Nautilus Shell", "Nether Star", "Prismarine Shard", "Saddle", "Sculk Catalyst", "Snowball", "Stick", "String", "Totem Of Undying", "Trident", "Wet Sponge"]
         };
 
         window.addEventListener('updateDashboard', (e) => {
@@ -80,8 +96,9 @@
                     sortedItems.forEach(i => {
                         let colorClass = i.yield >= 0.5 ? 'val-high' : (i.yield >= 0.15 ? 'val-med' : 'val-low');
                         catHtml += `<div class="item">
-                            <span>${i.name} <span style="color:#6c7086;font-size:0.9em;">(${i.count})</span></span>
-                            <span class="${colorClass}">+${i.yield.toFixed(2)} pts</span>
+                            <span class="item-name">${i.name}</span>
+                            <span class="item-count">(${i.count})</span>
+                            <span class="item-yield ${colorClass}">+${i.yield.toFixed(2)} pts</span>
                         </div>`;
                     });
                 }
@@ -102,8 +119,9 @@
                 othersItems.forEach(i => {
                     let colorClass = i.yield >= 0.5 ? 'val-high' : (i.yield >= 0.15 ? 'val-med' : 'val-low');
                     othersHtml += `<div class="item">
-                        <span>${i.name} <span style="color:#6c7086;font-size:0.9em;">(${i.count})</span></span>
-                        <span class="${colorClass}">+${i.yield.toFixed(2)} pts</span>
+                        <span class="item-name">${i.name}</span>
+                        <span class="item-count">(${i.count})</span>
+                        <span class="item-yield ${colorClass}">+${i.yield.toFixed(2)} pts</span>
                     </div>`;
                 });
                 html += othersHtml + `</div>`;
