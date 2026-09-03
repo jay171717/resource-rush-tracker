@@ -11,13 +11,12 @@
         .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px; }
         
         .card { background: #181825; padding: 12px; border-radius: 8px; border: 1px solid #313244; display: flex; flex-direction: column; }
-        
-        /* The gap separator for subgroups */
         .subgroup-gap { height: 15px; margin: 5px 0; border-bottom: 3px solid #1e1e2e; }
         
         .item { 
             display: grid; 
-            grid-template-columns: 1fr 45px 85px; 
+            /* Added a 24px column at the start for the image */
+            grid-template-columns: 24px 1fr 45px 85px; 
             gap: 10px; 
             align-items: center; 
             margin: 2px 0; 
@@ -26,6 +25,10 @@
         }
         
         .item:last-child { border-bottom: none; }
+        
+        /* CSS to keep Minecraft sprites sharp */
+        .item-icon { width: 24px; height: 24px; image-rendering: pixelated; }
+        
         .item-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .item-count { color: #6c7086; font-size: 0.85em; text-align: right; }
         .item-yield { text-align: right; }
@@ -49,31 +52,18 @@
     </div>
 
     <script>
-        // Layout structured with subgroups (inner arrays) to create the visual gaps
         let layout = [
-            // Group 1
             [ ["Copper Ingot", "Iron Ingot", "Gold Ingot", "Emerald", "Diamond", "Lapis Lazuli", "Coal", "Redstone"] ],
-            // Group 2 (Split 4 and 3)
             [ ["Amethyst Shard", "Netherite Ingot", "Quartz", "Glowstone Dust"], ["Prismarine Crystals", "Prismarine Shard", "Nautilus Shell"] ],
-            // Group 3
             [ ["Rotten Flesh", "Bone", "Arrow", "Spider Eye", "Gunpowder", "Ender Pearl", "String", "Zombie Head"] ],
-            // Group 4 (Gap added)
             [ ["Ghast Tear", "Magma Cream", "Blaze Rod", "Wither Skeleton Skull"], ["Slime Ball", "Phantom Membrane", "Shulker Shell"] ],
-            // Group 5
             [ ["Bread", "Apple", "Carrot", "Beetroot", "Potato", "Baked Potato", "Poisonous Potato", "Chorus Fruit"] ],
-            // Group 6 (Gap added)
             [ ["Glow Berries", "Sweet Berries", "Melon Slice", "Dried Kelp"], ["Torchflower Seeds", "Seagrass", "Pitcher Pod"] ],
-            // Group 7
             [ ["Chicken", "Porkchop", "Beef", "Mutton", "Rabbit", "Salmon", "Cod", "Tropical Fish"] ],
-            // Group 8
             [ ["Cooked Chicken", "Cooked Porkchop", "Steak", "Cooked Mutton", "Cooked Rabbit", "Cooked Salmon", "Cooked Cod", "Pufferfish"] ],
-            // Group 9 (Gap added)
             [ ["Mushroom Stew", "Beetroot Soup", "Rabbit Stew", "Suspicious Stew"], ["Cake", "Cookie", "Pumpkin Pie"] ],
-            // Group 10 (Sugar moved in)
             [ ["Honey Bottle", "Bone Meal", "Milk Bucket", "Sugar"], ["Golden Apple", "Enchanted Golden Apple", "Golden Carrot"] ],
-            // Group 11 (Wool, Armadillo, Turtle added)
             [ ["Egg", "Feather", "Leather", "Wool", "Armadillo Scute", "Turtle Scute"], ["Rabbit Foot", "Rabbit Hide", "Glow Ink Sac", "Ink Sac"] ],
-            // Group 12 (Glass bottle moved here, acts as fallback group)
             [ ["Snowball", "Lead", "Breeze Rod", "Ominous Bottle", "Resin Brick", "Nether Star", "Sculk Catalyst", "Totem Of Undying", "Trident", "Wet Sponge", "Saddle", "Stick", "Glass Bottle"] ]
         ];
 
@@ -93,11 +83,9 @@
                 data[item] = parseInt(count) || 0;
             });
 
-            // Count total items dynamically
             const totalItemsFound = Object.keys(data).length;
             document.getElementById('totalHeaderCount').innerText = `(${totalItemsFound} Total Items)`;
 
-            // Dynamically push any unknown items into a new subgroup at the bottom of Group 12
             layout.forEach(group => group.forEach(sub => sub.forEach(i => trackedItems.add(i))));
             let unknownItems = [];
             for (const item of Object.keys(data)) {
@@ -107,7 +95,6 @@
                 }
             }
             if (unknownItems.length > 0) {
-                // Remove the unknown subgroup if it already exists from a previous render to avoid duplicates
                 if (layout[11].length > 1 && layout[11][layout[11].length - 1].some(i => unknownItems.includes(i))) {
                     layout[11].pop(); 
                 }
@@ -134,14 +121,20 @@
 
                     sortedItems.forEach(i => {
                         let colorClass = i.yield >= 0.5 ? 'val-high' : (i.yield >= 0.15 ? 'val-med' : 'val-low');
+                        
+                        // Converts "Gold Ingot" to "gold_ingot" for the URL
+                        let formattedId = i.name.toLowerCase().replace(/ /g, '_');
+                        let imgSrc = `https://raw.githubusercontent.com/InventivetalentDev/minecraft-assets/1.20.4/assets/minecraft/textures/item/${formattedId}.png`;
+                        let fallbackSrc = `https://raw.githubusercontent.com/InventivetalentDev/minecraft-assets/1.20.4/assets/minecraft/textures/block/${formattedId}.png`;
+
                         catHtml += `<div class="item">
+                            <img src="${imgSrc}" class="item-icon" onerror="this.onerror=null; this.src='${fallbackSrc}';">
                             <span class="item-name">${i.name}</span>
                             <span class="item-count">(${i.count})</span>
                             <span class="item-yield ${colorClass}">+${i.yield.toFixed(2)} pts</span>
                         </div>`;
                     });
 
-                    // Add the visual gap between subgroups inside the same box
                     if (index < group.length - 1 && sortedItems.length > 0) {
                         catHtml += `<div class="subgroup-gap"></div>`;
                     }
