@@ -15,7 +15,8 @@
         
         .item { 
             display: grid; 
-            grid-template-columns: 24px 1fr max-content; 
+            /* Added a 45px column at the front for the item count */
+            grid-template-columns: 45px 24px 1fr max-content; 
             gap: 10px; 
             align-items: center; 
             margin: 2px 0; 
@@ -27,17 +28,11 @@
         .item-icon { width: 24px; height: 24px; image-rendering: pixelated; }
         .item-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         
-        /* New stacked stats styling */
+        /* New left-aligned count styling */
+        .item-count-left { color: #cdd6f4; font-size: 1em; font-weight: bold; text-align: right; }
+        
         .item-stats { display: flex; flex-direction: column; align-items: flex-end; line-height: 1.1; }
-        .item-top-row { display: flex; align-items: baseline; gap: 6px; }
-        
-        /* Emphasized item count */
-        .item-count { color: #cdd6f4; font-size: 1em; font-weight: bold; }
-        
-        /* Square root total points indicator */
-        .item-sqrt { color: #f9e2af; font-size: 0.85em; }
-        
-        /* De-emphasized, uncolored marginal yield */
+        .item-sqrt { color: #f9e2af; font-size: 0.85em; font-weight: bold; }
         .item-yield { color: #6c7086; font-size: 0.75em; margin-top: 2px; } 
         
         .empty-state { text-align: center; color: #6c7086; margin-top: 50px; font-size: 1.1em; grid-column: 1 / -1; }
@@ -135,17 +130,14 @@
                         let imgSrc = iconOverrides[i.name] || `https://assets.mcasset.cloud/1.21.4/assets/minecraft/textures/item/${formattedId}.png`;
                         let fallbackSrc = `https://assets.mcasset.cloud/1.21.4/assets/minecraft/textures/block/${formattedId}.png`;
                         
-                        // Calculate maximum point pool (square root of total count)
                         let maxPoints = Math.sqrt(i.count).toFixed(2);
 
                         catHtml += `<div class="item">
+                            <span class="item-count-left">${i.count}</span>
                             <img src="${imgSrc}" class="item-icon" onerror="this.onerror=null; this.src='${fallbackSrc}';">
                             <span class="item-name">${i.name}</span>
                             <div class="item-stats">
-                                <div class="item-top-row">
-                                    <span class="item-count">${i.count}</span>
-                                    <span class="item-sqrt">[${maxPoints}]</span>
-                                </div>
+                                <span class="item-sqrt">[${maxPoints}]</span>
                                 <span class="item-yield">+${i.yield.toFixed(2)}</span>
                             </div>
                         </div>`;
