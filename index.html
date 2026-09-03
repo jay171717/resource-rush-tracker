@@ -48,27 +48,30 @@
     </div>
 
     <script>
+        // Layout arrays now perfectly match your in-game item frame columns
         let layout = [
-            [ ["Copper Ingot", "Iron Ingot", "Gold Ingot", "Emerald", "Diamond", "Lapis Lazuli", "Coal", "Redstone"] ],
+            [ ["Diamond", "Emerald", "Gold Ingot", "Iron Ingot", "Copper Ingot", "Lapis Lazuli", "Coal", "Redstone"] ],
             [ ["Amethyst Shard", "Netherite Ingot", "Quartz", "Glowstone Dust"], ["Prismarine Crystals", "Prismarine Shard", "Nautilus Shell"] ],
-            [ ["Rotten Flesh", "Bone", "Arrow", "Spider Eye", "Gunpowder", "Ender Pearl", "String", "Zombie Head"] ],
+            [ ["Rotten Flesh", "Bone", "Arrow", "Spider Eye", "String", "Gunpowder", "Ender Pearl", "Zombie Head"] ],
             [ ["Ghast Tear", "Magma Cream", "Blaze Rod", "Wither Skeleton Skull"], ["Slime Ball", "Phantom Membrane", "Shulker Shell"] ],
             [ ["Bread", "Apple", "Carrot", "Beetroot", "Potato", "Baked Potato", "Poisonous Potato", "Chorus Fruit"] ],
-            [ ["Glow Berries", "Sweet Berries", "Melon Slice", "Dried Kelp"], ["Torchflower Seeds", "Seagrass", "Pitcher Pod"] ],
-            [ ["Chicken", "Porkchop", "Beef", "Mutton", "Rabbit", "Salmon", "Cod", "Tropical Fish"] ],
-            [ ["Cooked Chicken", "Cooked Porkchop", "Steak", "Cooked Mutton", "Cooked Rabbit", "Cooked Salmon", "Cooked Cod", "Pufferfish"] ],
+            [ ["Glow Berries", "Sweet Berries", "Melon Slice", "Dried Kelp"], ["Pitcher Pod", "Seagrass", "Torchflower Seeds"] ],
+            [ ["Chicken", "Beef", "Porkchop", "Mutton", "Rabbit", "Cod", "Salmon", "Tropical Fish"] ],
+            [ ["Cooked Chicken", "Steak", "Cooked Porkchop", "Cooked Mutton", "Cooked Rabbit", "Cooked Cod", "Cooked Salmon", "Pufferfish"] ],
             [ ["Mushroom Stew", "Beetroot Soup", "Rabbit Stew", "Suspicious Stew"], ["Cake", "Cookie", "Pumpkin Pie"] ],
             [ ["Honey Bottle", "Bone Meal", "Milk Bucket", "Sugar"], ["Golden Apple", "Enchanted Golden Apple", "Golden Carrot"] ],
-            [ ["Egg", "Feather", "Leather", "Wool", "Armadillo Scute", "Turtle Scute"], ["Rabbit Foot", "Rabbit Hide", "Glow Ink Sac", "Ink Sac"] ],
-            [ ["Snowball", "Lead", "Breeze Rod", "Ominous Bottle", "Resin Brick", "Nether Star", "Sculk Catalyst", "Totem Of Undying", "Trident", "Wet Sponge", "Saddle", "Stick", "Glass Bottle"] ]
+            [ ["Egg", "Stick", "Feather", "Leather", "Snowball", "Glass Bottle", "Wool", "Ominous Bottle", "Rabbit Foot", "Rabbit Hide", "Turtle Scute", "Armadillo Scute"] ],
+            [ ["Nether Star", "Sculk Catalyst", "Totem Of Undying", "Trident", "Wet Sponge", "Saddle", "Glow Ink Sac", "Ink Sac", "Breeze Rod", "Lead", "Resin Brick", "Goat Horn"] ]
         ];
 
-        // Manual routing for items without standard 2D textures or mismatched internal names
+        // Hardcoded fixes for items that lack standard 2D inventory sprites
         const iconOverrides = {
             "Steak": "https://assets.mcasset.cloud/1.21.4/assets/minecraft/textures/item/cooked_beef.png",
             "Enchanted Golden Apple": "https://assets.mcasset.cloud/1.21.4/assets/minecraft/textures/item/golden_apple.png",
             "Zombie Head": "https://mc-heads.net/avatar/MHF_Zombie/24",
-            "Wither Skeleton Skull": "https://mc-heads.net/avatar/MHF_Wither/24"
+            "Wither Skeleton Skull": "https://mc-heads.net/avatar/MHF_Wither/24",
+            "Wool": "https://assets.mcasset.cloud/1.21.4/assets/minecraft/textures/block/white_wool.png",
+            "Sculk Catalyst": "https://assets.mcasset.cloud/1.21.4/assets/minecraft/textures/block/sculk_catalyst.png"
         };
 
         window.addEventListener('updateDashboard', (e) => {
@@ -111,19 +114,19 @@
                 let catHtml = `<div class="card">`;
                 
                 group.forEach((subgroup, index) => {
-                    let sortedItems = [];
+                    let sectionItems = []; // Renamed to clarify we are no longer sorting
 
                     subgroup.forEach(item => {
                         if (data[item] !== undefined) {
                             let count = data[item];
                             let yieldVal = count === 0 ? 1.00 : (1 / Math.sqrt(count)); 
-                            sortedItems.push({ name: item, count, yield: yieldVal });
+                            sectionItems.push({ name: item, count, yield: yieldVal });
                         }
                     });
 
-                    sortedItems.sort((a, b) => b.yield - a.yield);
+                    // Sorting code entirely removed so items display in your exact array order
 
-                    sortedItems.forEach(i => {
+                    sectionItems.forEach(i => {
                         let colorClass = i.yield >= 0.5 ? 'val-high' : (i.yield >= 0.15 ? 'val-med' : 'val-low');
                         
                         let formattedId = i.name.toLowerCase().replace(/ /g, '_');
@@ -138,7 +141,7 @@
                         </div>`;
                     });
 
-                    if (index < group.length - 1 && sortedItems.length > 0) {
+                    if (index < group.length - 1 && sectionItems.length > 0) {
                         catHtml += `<div class="subgroup-gap"></div>`;
                     }
                 });
