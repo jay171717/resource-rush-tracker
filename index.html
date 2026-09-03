@@ -15,7 +15,7 @@
         
         .item { 
             display: grid; 
-            grid-template-columns: 24px 1fr 45px 85px; 
+            grid-template-columns: 24px 1fr max-content; 
             gap: 10px; 
             align-items: center; 
             margin: 2px 0; 
@@ -26,12 +26,20 @@
         .item:last-child { border-bottom: none; }
         .item-icon { width: 24px; height: 24px; image-rendering: pixelated; }
         .item-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .item-count { color: #6c7086; font-size: 0.85em; text-align: right; }
-        .item-yield { text-align: right; }
         
-        .val-high { color: #a6e3a1; font-weight: bold; } 
-        .val-med { color: #f9e2af; } 
-        .val-low { color: #f38ba8; }
+        /* New stacked stats styling */
+        .item-stats { display: flex; flex-direction: column; align-items: flex-end; line-height: 1.1; }
+        .item-top-row { display: flex; align-items: baseline; gap: 6px; }
+        
+        /* Emphasized item count */
+        .item-count { color: #cdd6f4; font-size: 1em; font-weight: bold; }
+        
+        /* Square root total points indicator */
+        .item-sqrt { color: #f9e2af; font-size: 0.85em; }
+        
+        /* De-emphasized, uncolored marginal yield */
+        .item-yield { color: #6c7086; font-size: 0.75em; margin-top: 2px; } 
+        
         .empty-state { text-align: center; color: #6c7086; margin-top: 50px; font-size: 1.1em; grid-column: 1 / -1; }
     </style>
 </head>
@@ -48,7 +56,6 @@
     </div>
 
     <script>
-        // Layout arrays now perfectly match your in-game item frame columns
         let layout = [
             [ ["Diamond", "Emerald", "Gold Ingot", "Iron Ingot", "Copper Ingot", "Lapis Lazuli", "Coal", "Redstone"] ],
             [ ["Amethyst Shard", "Netherite Ingot", "Quartz", "Glowstone Dust"], ["Prismarine Crystals", "Prismarine Shard", "Nautilus Shell"] ],
@@ -64,7 +71,6 @@
             [ ["Nether Star", "Sculk Catalyst", "Totem Of Undying", "Trident", "Wet Sponge", "Saddle", "Glow Ink Sac", "Ink Sac", "Breeze Rod", "Lead", "Resin Brick", "Goat Horn"] ]
         ];
 
-        // Hardcoded fixes for items that lack standard 2D inventory sprites
         const iconOverrides = {
             "Steak": "https://assets.mcasset.cloud/1.21.4/assets/minecraft/textures/item/cooked_beef.png",
             "Enchanted Golden Apple": "https://assets.mcasset.cloud/1.21.4/assets/minecraft/textures/item/golden_apple.png",
@@ -114,7 +120,7 @@
                 let catHtml = `<div class="card">`;
                 
                 group.forEach((subgroup, index) => {
-                    let sectionItems = []; // Renamed to clarify we are no longer sorting
+                    let sectionItems = [];
 
                     subgroup.forEach(item => {
                         if (data[item] !== undefined) {
@@ -124,20 +130,24 @@
                         }
                     });
 
-                    // Sorting code entirely removed so items display in your exact array order
-
                     sectionItems.forEach(i => {
-                        let colorClass = i.yield >= 0.5 ? 'val-high' : (i.yield >= 0.15 ? 'val-med' : 'val-low');
-                        
                         let formattedId = i.name.toLowerCase().replace(/ /g, '_');
                         let imgSrc = iconOverrides[i.name] || `https://assets.mcasset.cloud/1.21.4/assets/minecraft/textures/item/${formattedId}.png`;
                         let fallbackSrc = `https://assets.mcasset.cloud/1.21.4/assets/minecraft/textures/block/${formattedId}.png`;
+                        
+                        // Calculate maximum point pool (square root of total count)
+                        let maxPoints = Math.sqrt(i.count).toFixed(2);
 
                         catHtml += `<div class="item">
                             <img src="${imgSrc}" class="item-icon" onerror="this.onerror=null; this.src='${fallbackSrc}';">
                             <span class="item-name">${i.name}</span>
-                            <span class="item-count">(${i.count})</span>
-                            <span class="item-yield ${colorClass}">+${i.yield.toFixed(2)} pts</span>
+                            <div class="item-stats">
+                                <div class="item-top-row">
+                                    <span class="item-count">${i.count}</span>
+                                    <span class="item-sqrt">[${maxPoints}]</span>
+                                </div>
+                                <span class="item-yield">+${i.yield.toFixed(2)}</span>
+                            </div>
                         </div>`;
                     });
 
