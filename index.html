@@ -8,26 +8,24 @@
         body { background: #1e1e2e; color: #cdd6f4; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 20px; max-width: 1300px; margin: 0 auto;}
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid #45475a; padding-bottom: 10px;}
         .status { color: #a6e3a1; font-weight: bold; font-size: 0.9em; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px; }
         
-        /* Removed 'align-self: start' so all cards automatically stretch to the tallest column's bottom line */
-        .card { background: #181825; padding: 15px; border-radius: 8px; border: 1px solid #313244; display: flex; flex-direction: column; }
+        .card { background: #181825; padding: 12px; border-radius: 8px; border: 1px solid #313244; display: flex; flex-direction: column; }
         
-        .title { color: #89b4fa; font-size: 1.2em; font-weight: bold; margin-bottom: 10px; border-bottom: 1px solid #313244; padding-bottom: 5px; }
-        
-        /* Increased top margin to 40px to create significant space before secondary groups like Nether/Agriculture */
-        .sub-title { color: #cba6f7; font-size: 1.1em; font-weight: bold; margin: 40px 0 10px 0; border-bottom: 1px dashed #45475a; padding-bottom: 5px; }
+        /* The gap separator for subgroups */
+        .subgroup-gap { height: 15px; margin: 5px 0; border-bottom: 3px solid #1e1e2e; }
         
         .item { 
             display: grid; 
             grid-template-columns: 1fr 45px 85px; 
             gap: 10px; 
             align-items: center; 
-            margin: 5px 0; 
-            padding: 4px 0; 
+            margin: 2px 0; 
+            padding: 5px 0; 
             border-bottom: 1px dashed #313244;
         }
         
+        .item:last-child { border-bottom: none; }
         .item-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .item-count { color: #6c7086; font-size: 0.85em; text-align: right; }
         .item-yield { text-align: right; }
@@ -36,7 +34,6 @@
         .val-med { color: #f9e2af; } 
         .val-low { color: #f38ba8; }
         .empty-state { text-align: center; color: #6c7086; margin-top: 50px; font-size: 1.1em; grid-column: 1 / -1; }
-        .count-badge { color: #6c7086; font-size: 0.8em; font-weight: normal; margin-left: 5px; }
     </style>
 </head>
 <body>
@@ -52,27 +49,32 @@
     </div>
 
     <script>
-        const layout = [
-            [
-                { title: "Ores", items: ["Amethyst Shard", "Coal", "Copper Ingot", "Diamond", "Emerald", "Gold Ingot", "Iron Ingot", "Lapis Lazuli", "Redstone", "Raw Copper", "Raw Gold", "Raw Iron", "Resin Brick", "Prismarine Crystals"] },
-                { title: "Nether", items: ["Netherite Ingot", "Quartz", "Glowstone Dust"] }
-            ],
-            [
-                { title: "Veg Food", items: ["Apple", "Baked Potato", "Beetroot", "Beetroot Soup", "Bread", "Cake", "Carrot", "Chorus Fruit", "Cookie", "Dried Kelp", "Enchanted Golden Apple", "Glow Berries", "Golden Apple", "Golden Carrot", "Honey Bottle", "Melon Slice", "Mushroom Stew", "Poisonous Potato", "Potato", "Pumpkin Pie", "Suspicious Stew", "Sweet Berries"] }
-            ],
-            [
-                { title: "Non-Veg Food", items: ["Beef", "Chicken", "Cod", "Cooked Chicken", "Cooked Cod", "Cooked Mutton", "Cooked Porkchop", "Cooked Rabbit", "Cooked Salmon", "Mutton", "Porkchop", "Pufferfish", "Rabbit", "Rabbit Stew", "Salmon", "Steak", "Tropical Fish"] },
-                { title: "Agriculture", items: ["Bone Meal", "Pitcher Pod", "Seagrass", "Sugar", "Torchflower Seeds"] }
-            ],
-            [
-                { title: "Hostile Drops", items: ["Arrow", "Blaze Rod", "Bone", "Breeze Rod", "Ender Pearl", "Ghast Tear", "Gunpowder", "Magma Cream", "Ominous Bottle", "Phantom Membrane", "Rotten Flesh", "Shulker Shell", "Slime Ball", "Spider Eye", "Wither Skeleton Skull", "Zombie Head"] }
-            ],
-            [
-                { title: "Passive Drops", items: ["Armadillo Scute", "Egg", "Feather", "Glow Ink Sac", "Goat Horn", "Ink Sac", "Leather", "Rabbit Foot", "Rabbit Hide", "Turtle Scute", "Wool"] }
-            ],
-            [
-                { title: "Misc", items: ["Glass Bottle", "Lead", "Milk Bucket", "Nautilus Shell", "Nether Star", "Prismarine Shard", "Saddle", "Sculk Catalyst", "Snowball", "Stick", "String", "Totem Of Undying", "Trident", "Wet Sponge"] }
-            ]
+        // Layout structured with subgroups (inner arrays) to create the visual gaps
+        let layout = [
+            // Group 1
+            [ ["Copper Ingot", "Iron Ingot", "Gold Ingot", "Emerald", "Diamond", "Lapis Lazuli", "Coal", "Redstone"] ],
+            // Group 2 (Split 4 and 3)
+            [ ["Amethyst Shard", "Netherite Ingot", "Quartz", "Glowstone Dust"], ["Prismarine Crystals", "Prismarine Shard", "Nautilus Shell"] ],
+            // Group 3
+            [ ["Rotten Flesh", "Bone", "Arrow", "Spider Eye", "Gunpowder", "Ender Pearl", "String", "Zombie Head"] ],
+            // Group 4 (Gap added)
+            [ ["Ghast Tear", "Magma Cream", "Blaze Rod", "Wither Skeleton Skull"], ["Slime Ball", "Phantom Membrane", "Shulker Shell"] ],
+            // Group 5
+            [ ["Bread", "Apple", "Carrot", "Beetroot", "Potato", "Baked Potato", "Poisonous Potato", "Chorus Fruit"] ],
+            // Group 6 (Gap added)
+            [ ["Glow Berries", "Sweet Berries", "Melon Slice", "Dried Kelp"], ["Torchflower Seeds", "Seagrass", "Pitcher Pod"] ],
+            // Group 7
+            [ ["Chicken", "Porkchop", "Beef", "Mutton", "Rabbit", "Salmon", "Cod", "Tropical Fish"] ],
+            // Group 8
+            [ ["Cooked Chicken", "Cooked Porkchop", "Steak", "Cooked Mutton", "Cooked Rabbit", "Cooked Salmon", "Cooked Cod", "Pufferfish"] ],
+            // Group 9 (Gap added)
+            [ ["Mushroom Stew", "Beetroot Soup", "Rabbit Stew", "Suspicious Stew"], ["Cake", "Cookie", "Pumpkin Pie"] ],
+            // Group 10 (Sugar moved in)
+            [ ["Honey Bottle", "Bone Meal", "Milk Bucket", "Sugar"], ["Golden Apple", "Enchanted Golden Apple", "Golden Carrot"] ],
+            // Group 11 (Wool, Armadillo, Turtle added)
+            [ ["Egg", "Feather", "Leather", "Wool", "Armadillo Scute", "Turtle Scute"], ["Rabbit Foot", "Rabbit Hide", "Glow Ink Sac", "Ink Sac"] ],
+            // Group 12 (Glass bottle moved here, acts as fallback group)
+            [ ["Snowball", "Lead", "Breeze Rod", "Ominous Bottle", "Resin Brick", "Nether Star", "Sculk Catalyst", "Totem Of Undying", "Trident", "Wet Sponge", "Saddle", "Stick", "Glass Bottle"] ]
         ];
 
         window.addEventListener('updateDashboard', (e) => {
@@ -91,75 +93,63 @@
                 data[item] = parseInt(count) || 0;
             });
 
-            // Update Total Header Count
+            // Count total items dynamically
             const totalItemsFound = Object.keys(data).length;
             document.getElementById('totalHeaderCount').innerText = `(${totalItemsFound} Total Items)`;
 
+            // Dynamically push any unknown items into a new subgroup at the bottom of Group 12
+            layout.forEach(group => group.forEach(sub => sub.forEach(i => trackedItems.add(i))));
+            let unknownItems = [];
+            for (const item of Object.keys(data)) {
+                if (!trackedItems.has(item)) {
+                    unknownItems.push(item);
+                    trackedItems.add(item);
+                }
+            }
+            if (unknownItems.length > 0) {
+                // Remove the unknown subgroup if it already exists from a previous render to avoid duplicates
+                if (layout[11].length > 1 && layout[11][layout[11].length - 1].some(i => unknownItems.includes(i))) {
+                    layout[11].pop(); 
+                }
+                layout[11].push(unknownItems);
+            }
+
             let html = '';
             
-            layout.forEach(cardGroup => {
+            layout.forEach(group => {
                 let catHtml = `<div class="card">`;
                 
-                cardGroup.forEach((section, index) => {
+                group.forEach((subgroup, index) => {
                     let sortedItems = [];
-                    section.items.forEach(item => {
+
+                    subgroup.forEach(item => {
                         if (data[item] !== undefined) {
                             let count = data[item];
                             let yieldVal = count === 0 ? 1.00 : (1 / Math.sqrt(count)); 
                             sortedItems.push({ name: item, count, yield: yieldVal });
-                            trackedItems.add(item);
                         }
                     });
 
                     sortedItems.sort((a, b) => b.yield - a.yield);
 
-                    // Add the count badge dynamically to the title
-                    if (index === 0) {
-                        catHtml += `<div class="title">${section.title} <span class="count-badge">(${sortedItems.length})</span></div>`;
-                    } else {
-                        catHtml += `<div class="sub-title">${section.title} <span class="count-badge">(${sortedItems.length})</span></div>`;
-                    }
+                    sortedItems.forEach(i => {
+                        let colorClass = i.yield >= 0.5 ? 'val-high' : (i.yield >= 0.15 ? 'val-med' : 'val-low');
+                        catHtml += `<div class="item">
+                            <span class="item-name">${i.name}</span>
+                            <span class="item-count">(${i.count})</span>
+                            <span class="item-yield ${colorClass}">+${i.yield.toFixed(2)} pts</span>
+                        </div>`;
+                    });
 
-                    if(sortedItems.length === 0) {
-                        catHtml += `<div style="color: #6c7086; font-size: 0.9em; padding: 5px 0;">No items tracked yet.</div>`;
-                    } else {
-                        sortedItems.forEach(i => {
-                            let colorClass = i.yield >= 0.5 ? 'val-high' : (i.yield >= 0.15 ? 'val-med' : 'val-low');
-                            catHtml += `<div class="item">
-                                <span class="item-name">${i.name}</span>
-                                <span class="item-count">(${i.count})</span>
-                                <span class="item-yield ${colorClass}">+${i.yield.toFixed(2)} pts</span>
-                            </div>`;
-                        });
+                    // Add the visual gap between subgroups inside the same box
+                    if (index < group.length - 1 && sortedItems.length > 0) {
+                        catHtml += `<div class="subgroup-gap"></div>`;
                     }
                 });
                 
                 catHtml += `</div>`;
                 html += catHtml;
             });
-
-            let othersItems = [];
-            for (const [item, count] of Object.entries(data)) {
-                if (!trackedItems.has(item)) {
-                    let yieldVal = count === 0 ? 1.00 : (1 / Math.sqrt(count));
-                    othersItems.push({ name: item, count, yield: yieldVal });
-                }
-            }
-
-            if (othersItems.length > 0) {
-                othersItems.sort((a, b) => b.yield - a.yield);
-                let othersHtml = `<div class="card" style="border-color: #cba6f7;">
-                    <div class="title" style="color: #cba6f7;">Others <span class="count-badge">(${othersItems.length})</span></div>`;
-                othersItems.forEach(i => {
-                    let colorClass = i.yield >= 0.5 ? 'val-high' : (i.yield >= 0.15 ? 'val-med' : 'val-low');
-                    othersHtml += `<div class="item">
-                        <span class="item-name">${i.name}</span>
-                        <span class="item-count">(${i.count})</span>
-                        <span class="item-yield ${colorClass}">+${i.yield.toFixed(2)} pts</span>
-                    </div>`;
-                });
-                html += othersHtml + `</div>`;
-            }
 
             document.getElementById('output').innerHTML = html;
         }
