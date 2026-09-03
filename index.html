@@ -5,18 +5,23 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ResourceRush Live Tracker</title>
     <style>
-        body { background: #1e1e2e; color: #cdd6f4; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 20px; max-width: 1300px; margin: 0 auto;}
+        body { background: #1e1e2e; color: #cdd6f4; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 20px 40px; margin: 0 auto; overflow-x: hidden; }
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid #45475a; padding-bottom: 10px;}
         .status { color: #a6e3a1; font-weight: bold; font-size: 0.9em; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px; }
         
-        .card { background: #181825; padding: 12px; border-radius: 8px; border: 1px solid #313244; display: flex; flex-direction: column; }
+        /* New Layout Structure */
+        .layout-wrapper { display: flex; gap: 30px; align-items: flex-start; }
+        .dashboard-main { flex: 1; }
+        .sidebar { width: 340px; flex-shrink: 0; display: flex; flex-direction: column; gap: 20px; position: sticky; top: 20px; }
+        
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); gap: 15px; }
+        .card { background: #181825; padding: 15px; border-radius: 8px; border: 1px solid #313244; display: flex; flex-direction: column; }
         .subgroup-gap { height: 15px; margin: 5px 0; border-bottom: 3px solid #1e1e2e; }
         
         .item { 
             display: grid; 
-            grid-template-columns: 45px 24px 1fr max-content; 
-            gap: 10px; 
+            grid-template-columns: 60px 24px 1fr max-content; 
+            gap: 12px; 
             align-items: center; 
             margin: 2px 0; 
             padding: 5px 0; 
@@ -25,13 +30,28 @@
         
         .item:last-child { border-bottom: none; }
         .item-icon { width: 24px; height: 24px; image-rendering: pixelated; }
-        .item-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .item-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 0.95em; }
         
-        .item-count-left { color: #cdd6f4; font-size: 1em; font-weight: bold; text-align: right; }
+        /* Stacked Left Count Styling */
+        .count-col { display: flex; flex-direction: column; align-items: flex-end; line-height: 1.2; }
+        .item-count-global { color: #cdd6f4; font-size: 1.05em; font-weight: bold; }
+        .item-count-personal { color: #a6e3a1; font-size: 0.75em; }
+        .item-count-empty { color: #45475a; font-size: 0.75em; }
         
+        /* Right Stats Styling */
         .item-stats { display: flex; flex-direction: column; align-items: flex-end; line-height: 1.1; }
         .item-sqrt { color: #f9e2af; font-size: 0.85em; font-weight: bold; }
         .item-yield { color: #6c7086; font-size: 0.75em; margin-top: 2px; } 
+        
+        /* Sidebar Tools Styling */
+        .tool-title { color: #89b4fa; font-size: 1.1em; font-weight: bold; margin-bottom: 15px; border-bottom: 1px dashed #45475a; padding-bottom: 5px; }
+        .input-group { margin-bottom: 12px; display: flex; flex-direction: column; gap: 5px; }
+        .input-group label { font-size: 0.85em; color: #a6adc8; }
+        select, input { background: #1e1e2e; border: 1px solid #45475a; color: #cdd6f4; padding: 8px; border-radius: 4px; font-family: inherit; }
+        select:focus, input:focus { outline: none; border-color: #89b4fa; }
+        .two-col-inputs { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .result-box { background: #1e1e2e; padding: 10px; border-radius: 4px; border: 1px solid #313244; margin-top: 10px; font-size: 0.9em; line-height: 1.5; color: #a6adc8; }
+        .result-val { color: #a6e3a1; font-weight: bold; }
         
         .empty-state { text-align: center; color: #6c7086; margin-top: 50px; font-size: 1.1em; grid-column: 1 / -1; }
     </style>
@@ -39,17 +59,56 @@
 <body>
     <div class="header">
         <h2 style="margin: 0;">ResourceRush Live Tracker <span id="totalHeaderCount" style="color: #89b4fa; font-size: 0.7em; margin-left: 10px;"></span></h2>
-        <div class="status" id="statusText">Waiting for Discord data...</div>
+        <div class="status">
+            <span id="wsStatus" style="color: #f38ba8; margin-right: 15px;">🔌 Local WS: Disconnected</span>
+            <span id="statusText">Discord: Waiting...</span>
+        </div>
     </div>
     
-    <div id="output" class="grid">
-        <div class="empty-state">
-            Keep the Discord channel open in another tab. The data will sync automatically!
+    <div class="layout-wrapper">
+        <div id="output" class="dashboard-main grid">
+            <div class="empty-state">Keep the Discord channel open in another tab. Data will sync automatically!</div>
+        </div>
+        
+        <div class="sidebar">
+            <!-- Tool 1 -->
+            <div class="card">
+                <div class="tool-title">Static Converter</div>
+                <div class="input-group">
+                    <label>Select Tracked Item</label>
+                    <select id="calc-item"></select>
+                </div>
+                <div class="two-col-inputs">
+                    <div class="input-group">
+                        <label>Item Count</label>
+                        <input type="number" id="calc-count" min="0" placeholder="0">
+                    </div>
+                    <div class="input-group">
+                        <label>Points Value</label>
+                        <input type="number" id="calc-points" min="0" step="0.01" placeholder="0.00">
+                    </div>
+                </div>
+                <div class="result-box" id="calc-global-display">Global Pool: Select an item</div>
+            </div>
+
+            <!-- Tool 2 -->
+            <div class="card">
+                <div class="tool-title">Deposit Predictor</div>
+                <div class="input-group">
+                    <label>If I deposit this many items...</label>
+                    <input type="number" id="pred-deposit" min="1" placeholder="Enter amount...">
+                </div>
+                <div class="result-box">
+                    New Personal Points: <span class="result-val" id="pred-pts">0.00</span><br>
+                    New Market Share: <span class="result-val" id="pred-share">0.0%</span><br>
+                    New Global Total: <span class="result-val" id="pred-global">0</span>
+                </div>
+            </div>
         </div>
     </div>
 
     <script>
-        // IMMUTABLE BASE LAYOUT - Prevents array bleeding on re-renders
+        // Implemented Group 11 changes.
         const baseLayout = [
             [ ["Diamond", "Emerald", "Gold Ingot", "Iron Ingot", "Copper Ingot", "Lapis Lazuli", "Coal", "Redstone"] ],
             [ ["Amethyst Shard", "Netherite Ingot", "Quartz", "Glowstone Dust"], ["Prismarine Crystals", "Prismarine Shard", "Nautilus Shell"] ],
@@ -61,9 +120,7 @@
             [ ["Cooked Chicken", "Steak", "Cooked Porkchop", "Cooked Mutton", "Cooked Rabbit", "Cooked Cod", "Cooked Salmon", "Pufferfish"] ],
             [ ["Mushroom Stew", "Beetroot Soup", "Rabbit Stew", "Suspicious Stew"], ["Cake", "Cookie", "Pumpkin Pie"] ],
             [ ["Honey Bottle", "Bone Meal", "Milk Bucket", "Sugar"], ["Golden Apple", "Enchanted Golden Apple", "Golden Carrot"] ],
-            // Group 11: Exact 4 and 3 split
-            [ ["Egg", "Feather", "Leather", "Wool"], ["Glow Ink Sac", "Ink Sac", "Rabbit Foot", "Rabbit Hide", "Turtle Scute"] ],
-            // Group 12: Base catch-all for remaining known items. Unknowns append here.
+            [ ["Egg", "Feather", "Leather", "Wool"], ["Rabbit Foot", "Rabbit Hide", "Turtle Scute", "Glow Ink Sac", "Ink Sac"] ],
             [ ["Nether Star", "Sculk Catalyst", "Totem Of Undying", "Trident", "Wet Sponge", "Saddle", "Breeze Rod", "Lead", "Resin Brick", "Goat Horn", "Snowball", "Glass Bottle", "Ominous Bottle", "Stick", "Armadillo Scute"] ]
         ];
 
@@ -76,44 +133,53 @@
             "Sculk Catalyst": "https://assets.mcasset.cloud/1.21.4/assets/minecraft/textures/block/sculk_catalyst_top.png"
         };
 
-        window.addEventListener('updateDashboard', (e) => {
-            parseAndRender(e.detail);
-            document.getElementById('statusText').innerText = `Last synced: ${new Date().toLocaleTimeString()}`;
-        });
+        let globalData = {};
+        let personalPointsData = {}; // Will hold data from local WebSocket
 
-        function parseAndRender(rawText) {
-            const lines = rawText.split('\n');
-            const data = {};
-            
+        // WebSocket Connection for Local Node.js Script
+        function initWebSocket() {
+            const ws = new WebSocket('ws://localhost:8080');
+            ws.onopen = () => { document.getElementById('wsStatus').innerText = '⚡ Local WS: Connected'; document.getElementById('wsStatus').style.color = '#a6e3a1'; };
+            ws.onmessage = (event) => {
+                try {
+                    personalPointsData = JSON.parse(event.data);
+                    renderDashboard();
+                } catch(e) { console.error("WS Parse Error", e); }
+            };
+            ws.onclose = () => { document.getElementById('wsStatus').innerText = '🔌 Local WS: Disconnected'; document.getElementById('wsStatus').style.color = '#f38ba8'; setTimeout(initWebSocket, 5000); };
+            ws.onerror = () => { ws.close(); };
+        }
+        initWebSocket();
+
+        window.addEventListener('updateDashboard', (e) => {
+            const lines = e.detail.split('\n');
+            globalData = {};
             lines.forEach(line => {
                 if(!line.includes(':')) return;
                 let [item, count] = line.split(':').map(s => s.trim());
-                data[item] = parseInt(count) || 0;
+                globalData[item] = parseInt(count) || 0;
             });
+            document.getElementById('statusText').innerText = `Discord: ${new Date().toLocaleTimeString()}`;
+            renderDashboard();
+        });
 
-            // The total count is strictly derived from the number of lines parsed from Discord
-            const totalItemsFound = Object.keys(data).length;
+        function renderDashboard() {
+            const totalItemsFound = Object.keys(globalData).length;
             document.getElementById('totalHeaderCount').innerText = `(${totalItemsFound} Total Items)`;
 
-            // Create a fresh clone of the layout every tick to prevent memory bleed
             let currentLayout = JSON.parse(JSON.stringify(baseLayout));
             const trackedItems = new Set();
-            
             currentLayout.forEach(group => group.forEach(sub => sub.forEach(i => trackedItems.add(i))));
             
             let unknownItems = [];
-            for (const item of Object.keys(data)) {
-                if (!trackedItems.has(item)) {
-                    unknownItems.push(item);
-                }
+            for (const item of Object.keys(globalData)) {
+                if (!trackedItems.has(item)) unknownItems.push(item);
             }
-            
-            // Push completely unlisted items directly to the bottom of Group 12 safely
-            if (unknownItems.length > 0) {
-                currentLayout[11][0].push(...unknownItems);
-            }
+            if (unknownItems.length > 0) currentLayout[11][0].push(...unknownItems);
 
             let html = '';
+            let dropdownHtml = '<option value="">-- Choose Item --</option>';
+            let allTrackedData = [];
             
             currentLayout.forEach(group => {
                 let catHtml = `<div class="card">`;
@@ -122,10 +188,17 @@
                     let sectionItems = [];
 
                     subgroup.forEach(item => {
-                        if (data[item] !== undefined) {
-                            let count = data[item];
-                            let yieldVal = count === 0 ? 1.00 : (1 / Math.sqrt(count)); 
-                            sectionItems.push({ name: item, count, yield: yieldVal });
+                        if (globalData[item] !== undefined) {
+                            let Sk = globalData[item];
+                            let yieldVal = Sk === 0 ? 1.00 : (1 / Math.sqrt(Sk)); 
+                            
+                            // Algebra calculation for personal count
+                            let personalPoints = personalPointsData[item] || 0;
+                            let personalCount = Math.round(personalPoints * Math.sqrt(Sk));
+                            let personalPercent = Sk > 0 ? ((personalCount / Sk) * 100).toFixed(1) : 0;
+                            
+                            sectionItems.push({ name: item, Sk: Sk, yield: yieldVal, pPts: personalPoints, pCount: personalCount, pPerc: personalPercent });
+                            allTrackedData.push({ name: item, Sk: Sk, pCount: personalCount });
                         }
                     });
 
@@ -133,11 +206,18 @@
                         let formattedId = i.name.toLowerCase().replace(/ /g, '_');
                         let imgSrc = iconOverrides[i.name] || `https://assets.mcasset.cloud/1.21.4/assets/minecraft/textures/item/${formattedId}.png`;
                         let fallbackSrc = `https://assets.mcasset.cloud/1.21.4/assets/minecraft/textures/block/${formattedId}.png`;
-                        
-                        let maxPoints = Math.sqrt(i.count).toFixed(2);
+                        let maxPoints = Math.sqrt(i.Sk).toFixed(2);
+
+                        // Render personal stats underneath the global count
+                        let personalStatsHtml = i.pPts > 0 
+                            ? `<span class="item-count-personal">${i.pCount} (${i.pPerc}%)</span>`
+                            : `<span class="item-count-empty">0 (0%)</span>`;
 
                         catHtml += `<div class="item">
-                            <span class="item-count-left">${i.count}</span>
+                            <div class="count-col">
+                                <span class="item-count-global">${i.Sk}</span>
+                                ${personalStatsHtml}
+                            </div>
                             <img src="${imgSrc}" class="item-icon" onerror="this.onerror=null; this.src='${fallbackSrc}';">
                             <span class="item-name">${i.name}</span>
                             <div class="item-stats">
@@ -157,7 +237,76 @@
             });
 
             document.getElementById('output').innerHTML = html;
+
+            // Populate Calculator Dropdown
+            allTrackedData.sort((a,b) => a.name.localeCompare(b.name)).forEach(i => {
+                dropdownHtml += `<option value="${i.Sk}" data-name="${i.name}" data-pcount="${i.pCount}">${i.name}</option>`;
+            });
+            const sel = document.getElementById('calc-item');
+            const prevVal = sel.options[sel.selectedIndex]?.text;
+            sel.innerHTML = dropdownHtml;
+            
+            // Re-select previous item if it exists
+            for(let i=0; i<sel.options.length; i++) {
+                if(sel.options[i].text === prevVal) sel.selectedIndex = i;
+            }
+            updateCalculator();
         }
+
+        // Calculator Logic
+        const calcItem = document.getElementById('calc-item');
+        const calcCount = document.getElementById('calc-count');
+        const calcPts = document.getElementById('calc-points');
+        const calcGlobal = document.getElementById('calc-global-display');
+        
+        const predDeposit = document.getElementById('pred-deposit');
+        const predPts = document.getElementById('pred-pts');
+        const predShare = document.getElementById('pred-share');
+        const predGlobal = document.getElementById('pred-global');
+
+        function updateCalculator() {
+            if(!calcItem.value) return;
+            let Sk = parseFloat(calcItem.value);
+            calcGlobal.innerText = `Current Global Pool: ${Sk}`;
+            
+            // Auto-fill deposit predictor based on selected item's existing personal data
+            let selectedOpt = calcItem.options[calcItem.selectedIndex];
+            let currentPersonal = parseFloat(selectedOpt.dataset.pcount) || 0;
+            
+            let deposit = parseFloat(predDeposit.value) || 0;
+            let newSk = Sk + deposit;
+            let newPersonal = currentPersonal + deposit;
+            
+            if (newSk > 0) {
+                predPts.innerText = (newPersonal / Math.sqrt(newSk)).toFixed(2) + " pts";
+                predShare.innerText = ((newPersonal / newSk) * 100).toFixed(1) + "%";
+                predGlobal.innerText = newSk;
+            } else {
+                predPts.innerText = "0.00 pts"; predShare.innerText = "0.0%"; predGlobal.innerText = "0";
+            }
+        }
+
+        calcItem.addEventListener('change', () => {
+            calcCount.value = ''; calcPts.value = ''; predDeposit.value = '';
+            updateCalculator();
+        });
+
+        // Two-way bindings
+        calcCount.addEventListener('input', () => {
+            if(!calcItem.value) return;
+            let Sk = parseFloat(calcItem.value);
+            if(Sk > 0 && calcCount.value !== "") calcPts.value = (parseFloat(calcCount.value) / Math.sqrt(Sk)).toFixed(2);
+            else calcPts.value = "";
+        });
+
+        calcPts.addEventListener('input', () => {
+            if(!calcItem.value) return;
+            let Sk = parseFloat(calcItem.value);
+            if(Sk > 0 && calcPts.value !== "") calcCount.value = Math.round(parseFloat(calcPts.value) * Math.sqrt(Sk));
+            else calcCount.value = "";
+        });
+
+        predDeposit.addEventListener('input', updateCalculator);
     </script>
 </body>
 </html>
