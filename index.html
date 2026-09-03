@@ -5,20 +5,23 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ResourceRush Live Tracker</title>
     <style>
-        body { background: #1e1e2e; color: #cdd6f4; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 20px; max-width: 1300px; margin: 0 auto;}
+        /* Increased max-width to 1600px to make tables THICC */
+        body { background: #1e1e2e; color: #cdd6f4; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 20px; max-width: 1600px; margin: 0 auto;}
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid #45475a; padding-bottom: 10px;}
         .status { color: #a6e3a1; font-weight: bold; font-size: 0.9em; }
         
         .tools-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 15px; margin-bottom: 20px; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); gap: 15px; }
+        
+        /* Increased minimum card width to match the new wider page */
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 15px; }
         
         .card { background: #181825; padding: 15px; border-radius: 8px; border: 1px solid #313244; display: flex; flex-direction: column; }
         .subgroup-gap { height: 15px; margin: 5px 0; border-bottom: 3px solid #1e1e2e; }
         
         .item { 
             display: grid; 
-            grid-template-columns: 60px 24px 1fr max-content; 
-            gap: 12px; 
+            grid-template-columns: 65px 24px 1fr max-content; 
+            gap: 15px; 
             align-items: center; 
             margin: 2px 0; 
             padding: 5px 0; 
@@ -27,7 +30,7 @@
         
         .item:last-child { border-bottom: none; }
         .item-icon { width: 24px; height: 24px; image-rendering: pixelated; }
-        .item-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 0.95em; }
+        .item-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 1em; }
         
         .count-col { display: flex; flex-direction: column; align-items: flex-end; line-height: 1.2; }
         .item-count-global { color: #cdd6f4; font-size: 1.05em; font-weight: bold; }
@@ -35,10 +38,13 @@
         .item-count-empty { color: #45475a; font-size: 0.75em; }
         
         .item-stats { display: flex; flex-direction: column; align-items: flex-end; line-height: 1.1; }
-        .item-pts-row { display: flex; gap: 6px; align-items: baseline; }
-        .item-personal-pts { color: #a6e3a1; font-size: 0.85em; font-weight: bold; }
-        .item-sqrt { color: #f9e2af; font-size: 0.85em; font-weight: bold; }
-        .item-yield { color: #6c7086; font-size: 0.75em; margin-top: 2px; } 
+        .item-pts-row { display: flex; gap: 10px; justify-content: flex-end; }
+        
+        /* Fixed widths applied to perfectly align the two point columns */
+        .item-personal-pts { color: #a6e3a1; font-size: 0.85em; font-weight: bold; width: 45px; text-align: right; }
+        .item-sqrt { color: #f9e2af; font-size: 0.85em; font-weight: bold; width: 60px; text-align: right; }
+        
+        .item-yield { color: #6c7086; font-size: 0.75em; margin-top: 2px; text-align: right; } 
         
         /* Tool Styling */
         .tool-title { color: #89b4fa; font-size: 1.1em; font-weight: bold; margin-bottom: 15px; border-bottom: 1px dashed #45475a; padding-bottom: 5px; }
@@ -63,7 +69,6 @@
     </div>
     
     <div class="tools-container">
-        <!-- Pure Sqrt Converter -->
         <div class="card">
             <div class="tool-title">Pure Converter (Points ↔ Items)</div>
             <div class="two-col-inputs">
@@ -79,7 +84,6 @@
             <div style="font-size: 0.8em; color: #6c7086; margin-top: 10px;">Calculates pure square root values (assumes 100% market share).</div>
         </div>
 
-        <!-- Advanced Predictor -->
         <div class="card">
             <div class="tool-title">Advanced Predictor</div>
             <div class="two-col-inputs" style="margin-bottom: 10px;">
@@ -137,7 +141,7 @@
             "Zombie Head": "https://mc-heads.net/avatar/MHF_Zombie/24",
             "Wither Skeleton Skull": "https://mc-heads.net/avatar/MHF_WSkeleton/24",
             "Wool": "https://assets.mcasset.cloud/1.21.4/assets/minecraft/textures/block/white_wool.png",
-            "Sculk Catalyst": "https://assets.mcasset.cloud/1.21.4/assets/minecraft/textures/block/sculk_catalyst_top.png"
+            "Sculk Catalyst": "https://assets.mcasset.cloud/1.21.4/assets/minecraft/textures/block/sculk_catalyst_side.png"
         };
 
         let globalData = {};
@@ -211,7 +215,7 @@
                         let formattedId = i.name.toLowerCase().replace(/ /g, '_');
                         let imgSrc = iconOverrides[i.name] || `https://assets.mcasset.cloud/1.21.4/assets/minecraft/textures/item/${formattedId}.png`;
                         let fallbackSrc = `https://assets.mcasset.cloud/1.21.4/assets/minecraft/textures/block/${formattedId}.png`;
-                        let maxPoints = Math.sqrt(i.Sk).toFixed(2);
+                        let maxPoints = `[${Math.sqrt(i.Sk).toFixed(2)}]`;
                         let personalPtsDisplay = i.pPts > 0 ? i.pPts.toFixed(2) : "0.00";
 
                         let personalStatsHtml = i.pPts > 0 
@@ -228,7 +232,7 @@
                             <div class="item-stats">
                                 <div class="item-pts-row">
                                     <span class="item-personal-pts">${personalPtsDisplay}</span>
-                                    <span class="item-sqrt">[${maxPoints}]</span>
+                                    <span class="item-sqrt">${maxPoints}</span>
                                 </div>
                                 <span class="item-yield">+${i.yield.toFixed(2)}</span>
                             </div>
@@ -262,7 +266,6 @@
             updatePredictors();
         }
 
-        // Pure Converter Logic
         const sItems = document.getElementById('simple-items');
         const sPts = document.getElementById('simple-pts');
         
@@ -276,7 +279,6 @@
             sItems.value = (v > 0) ? Math.ceil(v * v) : '';
         });
 
-        // Advanced Predictor Logic
         const calcItem = document.getElementById('calc-item');
         const predDeposit = document.getElementById('pred-deposit');
         const predTarget = document.getElementById('pred-target');
@@ -291,7 +293,6 @@
                 P = parseFloat(calcItem.options[calcItem.selectedIndex].dataset.pcount) || 0;
             }
 
-            // Calculate Deposit
             let deposit = parseFloat(predDeposit.value);
             if (!isNaN(deposit) && deposit > 0) {
                 let newS = S + deposit;
@@ -302,7 +303,6 @@
                 predPts.innerText = "0.00"; predShare.innerText = "0.0%";
             }
 
-            // Calculate Target (Quadratic Formula)
             let T = parseFloat(predTarget.value);
             if (!isNaN(T) && T > 0) {
                 if (calcItem.value === "none") {
