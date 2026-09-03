@@ -1,57 +1,4 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ResourceRush Live Tracker</title>
-    <style>
-        body { background: #1e1e2e; color: #cdd6f4; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 20px; max-width: 1300px; margin: 0 auto;}
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid #45475a; padding-bottom: 10px;}
-        .status { color: #a6e3a1; font-weight: bold; font-size: 0.9em; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px; }
-        
-        .card { background: #181825; padding: 12px; border-radius: 8px; border: 1px solid #313244; display: flex; flex-direction: column; }
-        .subgroup-gap { height: 15px; margin: 5px 0; border-bottom: 3px solid #1e1e2e; }
-        
-        .item { 
-            display: grid; 
-            /* Added a 24px column at the start for the image */
-            grid-template-columns: 24px 1fr 45px 85px; 
-            gap: 10px; 
-            align-items: center; 
-            margin: 2px 0; 
-            padding: 5px 0; 
-            border-bottom: 1px dashed #313244;
-        }
-        
-        .item:last-child { border-bottom: none; }
-        
-        /* CSS to keep Minecraft sprites sharp */
-        .item-icon { width: 24px; height: 24px; image-rendering: pixelated; }
-        
-        .item-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .item-count { color: #6c7086; font-size: 0.85em; text-align: right; }
-        .item-yield { text-align: right; }
-        
-        .val-high { color: #a6e3a1; font-weight: bold; } 
-        .val-med { color: #f9e2af; } 
-        .val-low { color: #f38ba8; }
-        .empty-state { text-align: center; color: #6c7086; margin-top: 50px; font-size: 1.1em; grid-column: 1 / -1; }
-    </style>
-</head>
-<body>
-    <div class="header">
-        <h2 style="margin: 0;">ResourceRush Live Tracker <span id="totalHeaderCount" style="color: #89b4fa; font-size: 0.7em; margin-left: 10px;"></span></h2>
-        <div class="status" id="statusText">Waiting for Discord data...</div>
-    </div>
-    
-    <div id="output" class="grid">
-        <div class="empty-state">
-            Keep the Discord channel open in another tab. The data will sync automatically!
-        </div>
-    </div>
-
-    <script>
+<script>
         let layout = [
             [ ["Copper Ingot", "Iron Ingot", "Gold Ingot", "Emerald", "Diamond", "Lapis Lazuli", "Coal", "Redstone"] ],
             [ ["Amethyst Shard", "Netherite Ingot", "Quartz", "Glowstone Dust"], ["Prismarine Crystals", "Prismarine Shard", "Nautilus Shell"] ],
@@ -66,6 +13,14 @@
             [ ["Egg", "Feather", "Leather", "Wool", "Armadillo Scute", "Turtle Scute"], ["Rabbit Foot", "Rabbit Hide", "Glow Ink Sac", "Ink Sac"] ],
             [ ["Snowball", "Lead", "Breeze Rod", "Ominous Bottle", "Resin Brick", "Nether Star", "Sculk Catalyst", "Totem Of Undying", "Trident", "Wet Sponge", "Saddle", "Stick", "Glass Bottle"] ]
         ];
+
+        // Manual routing for items without standard 2D textures or mismatched internal names
+        const iconOverrides = {
+            "Steak": "https://assets.mcasset.cloud/1.21.4/assets/minecraft/textures/item/cooked_beef.png",
+            "Enchanted Golden Apple": "https://assets.mcasset.cloud/1.21.4/assets/minecraft/textures/item/golden_apple.png",
+            "Zombie Head": "https://mc-heads.net/avatar/MHF_Zombie/24",
+            "Wither Skeleton Skull": "https://mc-heads.net/avatar/MHF_Wither/24"
+        };
 
         window.addEventListener('updateDashboard', (e) => {
             parseAndRender(e.detail);
@@ -122,10 +77,10 @@
                     sortedItems.forEach(i => {
                         let colorClass = i.yield >= 0.5 ? 'val-high' : (i.yield >= 0.15 ? 'val-med' : 'val-low');
                         
-                        // Converts "Gold Ingot" to "gold_ingot" for the URL
                         let formattedId = i.name.toLowerCase().replace(/ /g, '_');
-                        let imgSrc = `https://raw.githubusercontent.com/InventivetalentDev/minecraft-assets/1.20.4/assets/minecraft/textures/item/${formattedId}.png`;
-                        let fallbackSrc = `https://raw.githubusercontent.com/InventivetalentDev/minecraft-assets/1.20.4/assets/minecraft/textures/block/${formattedId}.png`;
+                        // Use overrides, then fallback to mcasset.cloud item/block folders
+                        let imgSrc = iconOverrides[i.name] || `https://assets.mcasset.cloud/1.21.4/assets/minecraft/textures/item/${formattedId}.png`;
+                        let fallbackSrc = `https://assets.mcasset.cloud/1.21.4/assets/minecraft/textures/block/${formattedId}.png`;
 
                         catHtml += `<div class="item">
                             <img src="${imgSrc}" class="item-icon" onerror="this.onerror=null; this.src='${fallbackSrc}';">
@@ -147,5 +102,3 @@
             document.getElementById('output').innerHTML = html;
         }
     </script>
-</body>
-</html>
