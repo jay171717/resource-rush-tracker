@@ -15,7 +15,6 @@
         
         .item { 
             display: grid; 
-            /* Added a 45px column at the front for the item count */
             grid-template-columns: 45px 24px 1fr max-content; 
             gap: 10px; 
             align-items: center; 
@@ -28,7 +27,6 @@
         .item-icon { width: 24px; height: 24px; image-rendering: pixelated; }
         .item-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         
-        /* New left-aligned count styling */
         .item-count-left { color: #cdd6f4; font-size: 1em; font-weight: bold; text-align: right; }
         
         .item-stats { display: flex; flex-direction: column; align-items: flex-end; line-height: 1.1; }
@@ -51,7 +49,8 @@
     </div>
 
     <script>
-        let layout = [
+        // IMMUTABLE BASE LAYOUT - Prevents array bleeding on re-renders
+        const baseLayout = [
             [ ["Diamond", "Emerald", "Gold Ingot", "Iron Ingot", "Copper Ingot", "Lapis Lazuli", "Coal", "Redstone"] ],
             [ ["Amethyst Shard", "Netherite Ingot", "Quartz", "Glowstone Dust"], ["Prismarine Crystals", "Prismarine Shard", "Nautilus Shell"] ],
             [ ["Rotten Flesh", "Bone", "Arrow", "Spider Eye", "String", "Gunpowder", "Ender Pearl", "Zombie Head"] ],
@@ -62,8 +61,10 @@
             [ ["Cooked Chicken", "Steak", "Cooked Porkchop", "Cooked Mutton", "Cooked Rabbit", "Cooked Cod", "Cooked Salmon", "Pufferfish"] ],
             [ ["Mushroom Stew", "Beetroot Soup", "Rabbit Stew", "Suspicious Stew"], ["Cake", "Cookie", "Pumpkin Pie"] ],
             [ ["Honey Bottle", "Bone Meal", "Milk Bucket", "Sugar"], ["Golden Apple", "Enchanted Golden Apple", "Golden Carrot"] ],
-            [ ["Egg", "Stick", "Feather", "Leather", "Snowball", "Glass Bottle", "Wool", "Ominous Bottle", "Rabbit Foot", "Rabbit Hide", "Turtle Scute", "Armadillo Scute"] ],
-            [ ["Nether Star", "Sculk Catalyst", "Totem Of Undying", "Trident", "Wet Sponge", "Saddle", "Glow Ink Sac", "Ink Sac", "Breeze Rod", "Lead", "Resin Brick", "Goat Horn"] ]
+            // Group 11: Exact 4 and 3 split
+            [ ["Egg", "Feather", "Leather", "Wool"], ["Rabbit Foot", "Rabbit Hide", "Turtle Scute"] ],
+            // Group 12: Base catch-all for remaining known items. Unknowns append here.
+            [ ["Nether Star", "Sculk Catalyst", "Totem Of Undying", "Trident", "Wet Sponge", "Saddle", "Glow Ink Sac", "Ink Sac", "Breeze Rod", "Lead", "Resin Brick", "Goat Horn", "Snowball", "Glass Bottle", "Ominous Bottle", "Stick", "Armadillo Scute"] ]
         ];
 
         const iconOverrides = {
@@ -83,7 +84,6 @@
         function parseAndRender(rawText) {
             const lines = rawText.split('\n');
             const data = {};
-            const trackedItems = new Set();
             
             lines.forEach(line => {
                 if(!line.includes(':')) return;
@@ -91,27 +91,31 @@
                 data[item] = parseInt(count) || 0;
             });
 
+            // The total count is strictly derived from the number of lines parsed from Discord
             const totalItemsFound = Object.keys(data).length;
             document.getElementById('totalHeaderCount').innerText = `(${totalItemsFound} Total Items)`;
 
-            layout.forEach(group => group.forEach(sub => sub.forEach(i => trackedItems.add(i))));
+            // Create a fresh clone of the layout every tick to prevent memory bleed
+            let currentLayout = JSON.parse(JSON.stringify(baseLayout));
+            const trackedItems = new Set();
+            
+            currentLayout.forEach(group => group.forEach(sub => sub.forEach(i => trackedItems.add(i))));
+            
             let unknownItems = [];
             for (const item of Object.keys(data)) {
                 if (!trackedItems.has(item)) {
                     unknownItems.push(item);
-                    trackedItems.add(item);
                 }
             }
+            
+            // Push completely unlisted items directly to the bottom of Group 12 safely
             if (unknownItems.length > 0) {
-                if (layout[11].length > 1 && layout[11][layout[11].length - 1].some(i => unknownItems.includes(i))) {
-                    layout[11].pop(); 
-                }
-                layout[11].push(unknownItems);
+                currentLayout[11][0].push(...unknownItems);
             }
 
             let html = '';
             
-            layout.forEach(group => {
+            currentLayout.forEach(group => {
                 let catHtml = `<div class="card">`;
                 
                 group.forEach((subgroup, index) => {
